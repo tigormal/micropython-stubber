@@ -137,7 +137,7 @@ class Stubber:
             path = get_root()
 
         self.path = "/usr/{}/stubs/{}".format(path, self.flat_fwid).replace("//", "/")
-        self._log.debug(self.path)
+        log.debug(self.path)
         try:
             ensure_folder(path + "/")
         except OSError:
@@ -1072,7 +1072,7 @@ def main():
 
 if __name__ == "__main__" or is_micropython():
     if not file_exists("no_auto_stubber.txt"):
-        print(f"createstubs.py: {__version__}")
+        print("createstubs.py: {}".format(__version__))
         try:
             gc.threshold(4 * 1024)  # type: ignore
             gc.enable()
