@@ -66,8 +66,8 @@ class logging:
 
 
 log = logging.getLogger("stubber")
-logging.basicConfig(level=logging.INFO)
-# logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class OrderedDict(dict):
@@ -581,8 +581,8 @@ def _info():  # type:() -> dict[str, str]
             "version": "",
             "build": "",
             "ver": "",
-            "port": sys.platform,  # port: esp32 / win32 / linux / stm32
-            "board": "UNKNOWN",
+            "port": "quectel",  # port: esp32 / win32 / linux / stm32 # TODO: Check if we actually work with Quectel board
+            "board": sys.platform,
             "board_id": "",
             "variant": "",
             "cpu": "",
@@ -713,11 +713,10 @@ def version_str(version: tuple):  #  -> str:
     return v_str
 
 
-def get_boardname(info: dict) -> str:
+def get_boardname(info: dict):
     "Read the board_id from the boardname.py file that may have been created upfront"
     try:
-        from boardname import BOARD_ID  # type: ignore
-
+        BOARD_ID = os.uname()[0].split('=')[1]
         log.info("Found BOARD_ID: {}".format(BOARD_ID))
     except ImportError:
         log.warning("BOARD_ID not found")
@@ -735,7 +734,7 @@ def get_root() -> str:  # sourcery skip: use-assigned-variable
         # unix port
         c = "."
     r = c
-    for r in ["/remote", "/sd", "/flash", "/", c, "."]:
+    for r in ["/remote", "/sd", "/flash", "/usr", "/", c, "."]:
         try:
             _ = os.stat(r)
             break
