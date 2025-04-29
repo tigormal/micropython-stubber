@@ -1,10 +1,10 @@
 """
-Create stubs for (all) modules on a MicroPython board
+Create stubs for (all) modules on a QuecPython board
 """
 # Copyright (c) 2019-2023 Jos Verlinde
 # pylint: disable= invalid-name, missing-function-docstring, import-outside-toplevel, logging-not-lazy
 import gc
-import logging
+import log as logging
 import sys
 
 import uos as os
@@ -15,16 +15,53 @@ try:
 except ImportError:
     pass
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ucollections import OrderedDict  # type: ignore
+# try:
+#     from collections import OrderedDict
+# except ImportError:
+#     from ucollections import OrderedDict  # type: ignore
 
-__version__ = "v1.13.8"
+__version__ = "v1.13.7"
 ENOENT = 2
 _MAX_CLASS_LEVEL = 2  # Max class nesting
 LIBS = [".", "/lib", "/sd/lib", "/flash/lib", "lib"]
 from time import sleep
+
+
+class OrderedDict(dict):
+    """implementation of OrderedDict"""
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._keys = []
+        self.update(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        if key not in self._keys:
+            self._keys.append(key)
+        super().__setitem__(key, value)
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self._keys.remove(key)
+
+    def __iter__(self):
+        return iter(self._keys)
+
+    def keys(self):
+        return self._keys
+
+    def items(self):
+        return [(key, self[key]) for key in self._keys]
+
+    def values(self):
+        return [self[key] for key in self._keys]
+
+    def update(self, *args, **kwargs):
+        for key, value in dict(*args, **kwargs).items():
+            self[key] = value
+
+    def clear(self):
+        super().clear()
+        self._keys = []
 
 
 class Stubber:
@@ -58,7 +95,7 @@ class Stubber:
         else:
             path = get_root()
 
-        self.path = "{}/stubs/{}".format(path, self.flat_fwid).replace("//", "/")
+        self.path = "/usr/{}/stubs/{}".format(path, self.flat_fwid).replace("//", "/")
         self._log.debug(self.path)
         try:
             ensure_folder(path + "/")
@@ -542,7 +579,7 @@ def _info():  # type:() -> dict[str, str]
         # .mpy version.minor
         info["mpy"] = "v{}.{}".format(sys_mpy & 0xFF, sys_mpy >> 8 & 3)
     # simple to use version[-build] string
-    info["ver"] = f"v{info['version']}-{info['build']}" if info["build"] else f"v{info['version']}"
+    info["ver"] = "v{}-{}".format(info['version'], info['build']) if info["build"] else "v{}".format(info['version'])
 
     return info
 
