@@ -1,11 +1,11 @@
 """
-Create stubs for (all) modules on a MicroPython board
+Create stubs for (all) modules on a QuecPython board
 """
 
 # Copyright (c) 2019-2024 Jos Verlinde
 
 import gc
-import os
+import uos as os
 import sys
 from time import sleep
 
@@ -19,10 +19,10 @@ try:
 except ImportError:
     pass
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ucollections import OrderedDict  # type: ignore
+# try:
+#     from collections import OrderedDict
+# except ImportError:
+#     from ucollections import OrderedDict  # type: ignore
 
 __version__ = "v1.25.0"
 ENOENT = 2 # on most ports
@@ -70,6 +70,43 @@ logging.basicConfig(level=logging.INFO)
 # logging.basicConfig(level=logging.DEBUG)
 
 
+class OrderedDict(dict):
+    """implementation of OrderedDict"""
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._keys = []
+        self.update(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        if key not in self._keys:
+            self._keys.append(key)
+        super().__setitem__(key, value)
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self._keys.remove(key)
+
+    def __iter__(self):
+        return iter(self._keys)
+
+    def keys(self):
+        return self._keys
+
+    def items(self):
+        return [(key, self[key]) for key in self._keys]
+
+    def values(self):
+        return [self[key] for key in self._keys]
+
+    def update(self, *args, **kwargs):
+        for key, value in dict(*args, **kwargs).items():
+            self[key] = value
+
+    def clear(self):
+        super().clear()
+        self._keys = []
+
+
 class Stubber:
     "Generate stubs for modules in firmware"
 
@@ -99,8 +136,8 @@ class Stubber:
         else:
             path = get_root()
 
-        self.path = "{}/stubs/{}".format(path, self.flat_fwid).replace("//", "/")
-        # log.debug(self.path)
+        self.path = "/usr/{}/stubs/{}".format(path, self.flat_fwid).replace("//", "/")
+        self._log.debug(self.path)
         try:
             ensure_folder(path + "/")
         except OSError:
@@ -664,7 +701,7 @@ def _info():  # type:() -> dict[str, str]
     if info["build"] and not info["version"].endswith("-preview"):
         info["version"] = info["version"] + "-preview"
     # simple to use version[-build] string
-    info["ver"] = f"{info['version']}-{info['build']}" if info["build"] else f"{info['version']}"
+    info["ver"] = "v{}-{}".format(info['version'], info['build']) if info["build"] else "v{}".format(info['version'])
 
     return info
 
