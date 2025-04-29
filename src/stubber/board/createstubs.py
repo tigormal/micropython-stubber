@@ -27,6 +27,7 @@ except ImportError:
 __version__ = "v1.25.0"
 ENOENT = 2 # on most ports
 ENOMESSAGE = 44 # on pyscript
+EWTF = -1
 _MAX_CLASS_LEVEL = 2  # Max class nesting
 LIBS = ["lib", "/lib", "/sd/lib", "/flash/lib", "."]
 
@@ -125,9 +126,9 @@ class Stubber:
             self._fwid = firmware_id.lower()
         else:
             if self.info["family"] == "micropython":
-                self._fwid = "{family}-v{version}-{port}-{board_id}".format(**self.info).rstrip("-")
+                self._fwid = "v{version}-{port}-{board_id}".format(**self.info).rstrip("-")
             else:
-                self._fwid = "{family}-v{version}-{port}".format(**self.info)
+                self._fwid = "v{version}-{port}".format(**self.info)
         self._start_free = gc.mem_free()  # type: ignore
 
         if path:
@@ -136,7 +137,7 @@ class Stubber:
         else:
             path = get_root()
 
-        self.path = "/usr/{}/stubs/{}".format(path, self.flat_fwid).replace("//", "/")
+        self.path = "{}/_S/{}".format(path, self.flat_fwid).replace("//", "/")
         log.debug(self.path)
         try:
             ensure_folder(path + "/")
@@ -538,7 +539,8 @@ def ensure_folder(path: str):
                 _ = os.stat(p)
             except OSError as e:
                 # folder does not exist
-                if e.args[0] in [ENOENT, ENOMESSAGE] :
+                log.debug("folder doesn't exist (errno: {})".format(e.args[0]))
+                if e.args[0] in [ENOENT, ENOMESSAGE, EWTF]:
                     try:
                         log.debug("Create folder {}".format(p))
                         os.mkdir(p)
